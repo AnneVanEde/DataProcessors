@@ -41,42 +41,43 @@ namespace XML_Processor
 
             while (true)
             {
-                Console.Write("<XMLProcessor>");
+                //Console.Write("<XMLProcessor>");
+                Console.Write(baseString + ">");
                 string opSuccess = "";
-                string[] inputParameters = Console.ReadLine().Split(' ');
+                string[] inputParameters = Console.ReadLine().Split("-p");
+                string param = "", paramOne = "", paramTwo = "";
+                if (inputParameters.Length > 1)
+                    param = inputParameters[1].Trim();
 
-                switch (inputParameters[0])
+                switch (inputParameters[0].Trim())
                 {
                     case "-h":
                         PrintHelp();
                         break;
                     case "-extract_jsym":
-                        opSuccess += RetrieveFeaturesXML();
-                        opSuccess += RetrieveValuesXML();
+                        if(param != "")
+                        {
+                            string[] parameters = param.Split(' ');
+                            paramOne = parameters[0];
+                            paramTwo = parameters[1];
+                        }
+                        opSuccess += RetrieveFeaturesXML(@"" + paramOne, @"feature_definitions.xml");
+                        opSuccess += RetrieveValuesXML(@"" + paramTwo, @"extracted_feature_values.xml");
                         break;
                     case "-print_all_xml":
-                        opSuccess += ParseAllToXML();
+                        opSuccess += ParseAllToXML(param, "feature_info_values");
                         break;
                     case "-print_inf_xml":
-                        opSuccess += ParseInfoToXML();
+                        opSuccess += ParseInfoToXML(param, "feature_info");
                         break;
                     case "-print_val_xml":
-                        opSuccess += ParseValuesToXML();
+                        opSuccess += ParseValuesToXML(param, "feature_values");
                         break;
                     case "-print_all_csv":
-                        opSuccess += ParseAllToCSV();
+                        opSuccess += ParseAllToCSV(param, "feature_info_values");
                         break;
                     case "-change_basedir":
-                        string line = baseString;
-                        while (line != "")
-                        {
-                            Console.WriteLine("The current base directory is:");
-                            Console.WriteLine("  " + baseString);
-                            Console.WriteLine("If you want to change this directory, give directory. If not press \"Enter\".");
-                            Console.Write("<XMLProcessor>");
-                            if ((line = Console.ReadLine()) != "")
-                                baseString = @"" + line;
-                        }
+                        baseString = @"" + param;
                         opSuccess += "Directory changed";
                         break;
                     default:
@@ -84,8 +85,8 @@ namespace XML_Processor
                         break;
                 }
 
-                if (opSuccess != "") Console.WriteLine("====== Finished - " + opSuccess + " ======"); 
-                
+                if (opSuccess != "") Console.WriteLine("====== Finished - " + opSuccess + " ======");
+
             }
 
 
@@ -96,8 +97,6 @@ namespace XML_Processor
 
         static void Init()
         {
-
-
             Console.WriteLine("########################################");
             Console.WriteLine("#   Welkom to The Feature Processor!   #");
             Console.WriteLine("#        Made by: Anne van Ede         #");
@@ -106,31 +105,36 @@ namespace XML_Processor
             Console.WriteLine("#    from XML files (and CSV files)    #");
             Console.WriteLine("########################################");
             Console.WriteLine("");
-
         }
 
         static void PrintHelp()
         {
             Console.WriteLine("");
-            Console.WriteLine("######################################################################");
-            Console.WriteLine("usage                :   [-function_option]");
+            Console.WriteLine("#####################################################################################################################");
+            Console.WriteLine("usage                :   [-function_option] [-p parameter parameter]");
             Console.WriteLine("-h                   :   Help");
             Console.WriteLine("");
 
             Console.WriteLine("Function options:");
-            Console.WriteLine(functionOptions[0] + "        :   Extract features");
-            Console.WriteLine(functionOptions[1] + "       :   Print Feature info and values to XML");
-            Console.WriteLine(functionOptions[2] + "       :   Print Feature info to XML");
-            Console.WriteLine(functionOptions[3] + "       :   Print Feature values to XML");
-            Console.WriteLine(functionOptions[5] + "       :   Print Feature info and values to CSV");
-            Console.WriteLine(functionOptions[4] + "      :   View and change base directory");
-            Console.WriteLine("######################################################################");
+            Console.WriteLine(functionOptions[0] + "\t[-p feature_definitions.xml extracted_feature_values.xml]" + " :   Extract features");
+            Console.WriteLine(functionOptions[1] + "\t[-p feature_info_values]" + " \t\t\t\t  :   Print Feature info and values to XML");
+            Console.WriteLine(functionOptions[2] + "\t[-p feature_info]" + " \t\t\t\t\t  :   Print Feature info to XML");
+            Console.WriteLine(functionOptions[3] + "\t[-p feature_values]" + " \t\t\t\t\t  :   Print Feature values to XML");
+            Console.WriteLine(functionOptions[5] + "\t[-p feature_info_values]" + " \t\t\t\t  :   Print Feature info and values to CSV");
+            Console.WriteLine(functionOptions[4] + "\t[-p C:/]" + " \t\t\t\t\t\t  :   View and change base directory");
+            Console.WriteLine("");
+
+            Console.WriteLine("Leave parameter part ([-p ...]) away for default values as show above");
+            Console.WriteLine("NB: filenames or directories with spaces must be enclosed in \"\".");
+            Console.WriteLine("#####################################################################################################################");
             Console.WriteLine("");
         }
 
-        static string RetrieveFeaturesXML()
+        static string RetrieveFeaturesXML(string paramName, string defaultName)
         {
-            lines = System.IO.File.ReadAllLines(baseString + @"feature_definitions.xml");
+            string fileName = (paramName == "" ? defaultName : paramName);
+
+            lines = System.IO.File.ReadAllLines(baseString + fileName);
             Feature temp = new Feature("", "", 0);
 
             for (int i = 0; i < lines.Length; i++)
@@ -175,9 +179,11 @@ namespace XML_Processor
             return "Feature Information Retrieved - ";
         }
 
-        static string RetrieveValuesXML()
+        static string RetrieveValuesXML(string paramName, string defaultName)
         {
-            lines = System.IO.File.ReadAllLines(baseString + @"extracted_feature_values.xml");
+            string fileName = (paramName == "" ? defaultName : paramName);
+
+            lines = System.IO.File.ReadAllLines(baseString + fileName);
             int featureIndex = -1;
 
             for (int i = 0; i < lines.Length; i++)
@@ -215,8 +221,10 @@ namespace XML_Processor
             return "Feature Values Retrieved";
         }
 
-        static string ParseAllToXML()
+        static string ParseAllToXML(string paramName, string defaultName)
         {
+            string fileName = (paramName == "" ? defaultName : paramName);
+
             // Parse To Printable
             for (int x = 0; x < longFeatures.Length; x++)
             {
@@ -234,12 +242,14 @@ namespace XML_Processor
                 }
             }
 
-            WriteToFile("feature_info_values", "xml");
-            return "Results written to 'feature_info_values.xml'";
+            WriteToFile(fileName, "xml");
+            return "Results written to '" + fileName + ".xml'";
         }
 
-        static string ParseInfoToXML()
+        static string ParseInfoToXML(string paramName, string defaultName)
         {
+            string fileName = (paramName == "" ? defaultName : paramName);
+
             // Parse To Printable
             for (int x = 0; x < longFeatures.Length; x++)
             {
@@ -248,12 +258,14 @@ namespace XML_Processor
                 newLines.Add(featInfo[x].dimensions.ToString());
             }
 
-            WriteToFile("feature_info", "xml");
-            return "Results written to 'feature_info.xml'";
+            WriteToFile(fileName, "xml");
+            return "Results written to '" + fileName + ".xml'";
         }
 
-        static string ParseValuesToXML()
+        static string ParseValuesToXML(string paramName, string defaultName)
         {
+            string fileName = (paramName == "" ? defaultName : paramName);
+
             // Parse To Printable
             for (int x = 0; x < longFeatures.Length; x++)
             {
@@ -268,12 +280,14 @@ namespace XML_Processor
                 }
             }
 
-            WriteToFile("feature_values", "xml");
-            return "Results written to 'feature_values.xml'";
+            WriteToFile(fileName, "xml");
+            return "Results written to '" + fileName + ".xml'";
         }
 
-        static string ParseAllToCSV()
+        static string ParseAllToCSV(string paramName, string defaultName)
         {
+            string fileName = (paramName == "" ? defaultName : paramName);
+
             int songID = 1;
             string nextLine = "Song ID,Song Name";
 
@@ -296,23 +310,24 @@ namespace XML_Processor
                     {
                         nextLine += "," + longFeatures[x][y][0];
                     }
-                    else { 
+                    else
+                    {
                         nextLine += ",\"" + longFeatures[x][y][0];
                         for (int z = 1; z < longFeatures[x][y].Count; z++)
                         {
                             nextLine += "," + longFeatures[x][y][z];
                         }
                         nextLine += "\"";
-                        
+
                     }
-                    
+
                 }
 
                 newLines.Add(nextLine);
             }
 
-            WriteToFile("feature_info_values", "csv");
-            return "Results written to 'feature_info_values.csv'";
+            WriteToFile(fileName, "xml");
+            return "Results written to '" + fileName + ".xml'";
         }
 
         static void WriteToFile(string baseName, string extension, string index = "")
